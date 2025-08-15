@@ -4,8 +4,18 @@ A collection of AppleScript and Bash utilities for managing multiple Terminal-ba
 
 ## Quick Start
 
+### Two-Window Mode (Recommended)
 ```bash
-# Start all workspaces
+# Start with 2 windows (servers in one, Claude agents in another)
+./go2
+
+# Stop two-window workspace
+./stop2
+```
+
+### Multi-Window Mode (Legacy)
+```bash
+# Start with 6 separate windows
 ./go
 
 # Stop all workspaces
@@ -14,16 +24,23 @@ A collection of AppleScript and Bash utilities for managing multiple Terminal-ba
 
 ## What It Does
 
-This toolkit spawns and manages multiple development workspaces, each with:
-- A Claude AI terminal for development assistance
-- A Vite dev server running on a unique port
-- Automatic git branch management
-- HTML title synchronization with workspace names
+This toolkit spawns and manages multiple development workspaces with two organization modes:
 
-Default workspaces:
-- **bugs** - Port 8081
-- **medium** - Port 8082  
-- **quick** - Port 8083
+### Two-Window Mode (`go2/stop2`) - **Recommended**
+- **Window 1 "Servers"**: Three tabs for dev servers (BUGS, MEDIUM, QUICK)
+- **Window 2 "Claude Agents"**: Three tabs for Claude AI instances
+- Clean separation of concerns
+- Easy tab navigation with Cmd+1, Cmd+2, Cmd+3
+
+### Multi-Window Mode (`go/stop`) - Legacy
+- 6 separate Terminal windows (3 servers + 3 Claude agents)
+- Each workspace gets its own server and Claude window
+
+Both modes provide:
+- Automatic git branch management (stash, checkout, pull)
+- HTML title synchronization with workspace names
+- Unique port assignments (8081, 8082, 8083)
+- One-command startup and cleanup
 
 ## Installation
 
@@ -44,15 +61,39 @@ chmod +x *.sh *.scpt go stop
 
 ## Main Commands
 
-### `go` - Start Everything
-Cleans up any existing workspaces and spawns fresh ones:
+### Two-Window Mode (Recommended)
+
+#### `go2` - Start Two-Window Workspace
+Creates two Terminal windows with tabs:
+```bash
+./go2          # Uses default 'greg' branch
+./go2 main     # Uses 'main' branch
+```
+
+**Window Layout:**
+- **Window 1 "Servers"**: 
+  - Tab 1: BUGS server (port 8081)
+  - Tab 2: MEDIUM server (port 8082)
+  - Tab 3: QUICK server (port 8083)
+- **Window 2 "Claude Agents"**:
+  - Tab 1: BUGS Claude
+  - Tab 2: MEDIUM Claude
+  - Tab 3: QUICK Claude
+
+#### `stop2` - Stop Two-Window Workspace
+```bash
+./stop2
+```
+
+### Multi-Window Mode (Legacy)
+
+#### `go` - Start Everything (6 Windows)
 ```bash
 ./go          # Uses default 'greg' branch
 ./go main     # Uses 'main' branch
 ```
 
-### `stop` - Stop Everything
-Kills all servers and closes all workspace windows:
+#### `stop` - Stop Everything
 ```bash
 ./stop
 ```
@@ -76,9 +117,10 @@ Kills all servers and closes all workspace windows:
 
 ### Project Setup
 
-- **`project_workspace_single`** - Setup workspace with git + server + Claude
-- **`project_workspace_tabs`** - Same but with tabs (requires accessibility)
-- **`project_workspace_dual`** - Same but with separate windows
+- **`project_workspace_two_windows`** - Two-window setup with tabs (new)
+- **`project_workspace_single`** - Single workspace with server then Claude
+- **`project_workspace_tabs`** - Single window with tabs (requires accessibility)
+- **`project_workspace_dual`** - Separate windows for server and Claude
 - **`setup_workspaces`** - Configure git branch and HTML titles
 
 ## Configuration
@@ -105,9 +147,22 @@ The default branch is `greg`. Change it by passing a parameter:
 
 ## Workflow Examples
 
-### Daily Development
+### Daily Development (Two-Window Mode)
 ```bash
-# Morning - start fresh
+# Morning - start fresh with 2 windows
+./go2
+
+# Window 1: All servers running in tabs
+# Window 2: All Claude agents ready in tabs
+# Switch tabs with Cmd+1, Cmd+2, Cmd+3
+
+# Evening - clean shutdown
+./stop2
+```
+
+### Daily Development (Multi-Window Mode)
+```bash
+# Morning - start fresh with 6 windows
 ./go
 
 # Work with Claude agents across workspaces
@@ -165,15 +220,18 @@ lsof -i :8081-8083
 
 ```
 .scripts/
-├── go                      # Main start script
-├── stop                    # Main stop script
-├── spawn_staff_workspaces  # Spawn all workspaces
-├── cleanup_workspaces      # Full cleanup
-├── project_workspace_*     # Workspace creation variants
-├── open_terminal          # Terminal window creation
-├── list_terminals         # List windows
-├── send_to_claude         # Message Claude sessions
-└── *.md                   # Documentation files
+├── go2                           # Two-window start (recommended)
+├── stop2                         # Two-window stop
+├── go                            # Multi-window start (legacy)
+├── stop                          # Multi-window stop
+├── project_workspace_two_windows # Two-window workspace setup
+├── spawn_staff_workspaces        # Spawn all workspaces
+├── cleanup_workspaces            # Full cleanup
+├── project_workspace_*           # Various workspace creation modes
+├── open_terminal                 # Terminal window creation
+├── list_terminals                # List windows
+├── send_to_claude                # Message Claude sessions
+└── *.md                          # Documentation files
 ```
 
 ## Contributing
