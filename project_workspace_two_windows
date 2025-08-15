@@ -1,0 +1,160 @@
+#!/usr/bin/osascript
+
+on run argv
+    -- Parse branch name (default: greg)
+    set branchName to "greg"
+    if (count of argv) ≥ 1 then
+        set branchName to item 1 of argv
+    end if
+    
+    tell application "Terminal"
+        -- Get random profiles for visual distinction
+        set allProfiles to name of every settings set
+        set serverProfileIndex to random number from 1 to count of allProfiles
+        set claudeProfileIndex to random number from 1 to count of allProfiles
+        set serverProfile to item serverProfileIndex of allProfiles
+        set claudeProfile to item claudeProfileIndex of allProfiles
+        
+        -- ===================================
+        -- WINDOW 1: SERVERS (git + yarn)
+        -- ===================================
+        set defaultSettings to default settings
+        set default settings to settings set serverProfile
+        
+        -- Create first server window with BUGS workspace
+        set bugsPath to "/Users/gregorywhiteside/Projects/.staff/BUGS"
+        -- Start with navigation only
+        set serverWindow to do script "cd " & quoted form of bugsPath
+        
+        tell serverWindow
+            set custom title to "Servers"
+        end tell
+        
+        delay 1
+        
+        -- Then run git setup
+        do script "echo '=== Setting up BUGS workspace ===' && git stash && git checkout " & branchName & " 2>/dev/null || git checkout -b " & branchName & " && git pull" in serverWindow
+        delay 3
+        
+        -- Update HTML title
+        do script "sed -i '' 's|<title>.*</title>|<title>bugs</title>|' index.html 2>/dev/null" in serverWindow
+        delay 1
+        
+        -- Finally start server
+        do script "echo 'Starting server on port 8081...' && DEV_PORT=8081 yarn run start" in serverWindow
+        
+        delay 3
+        
+        -- Add MEDIUM tab
+        activate
+        delay 0.5
+        tell application "System Events"
+            tell process "Terminal"
+                keystroke "t" using command down
+            end tell
+        end tell
+        delay 2 -- Increased delay for tab to be ready
+        
+        set mediumPath to "/Users/gregorywhiteside/Projects/.staff/MEDIUM"
+        
+        -- First navigate to directory
+        do script "cd " & quoted form of mediumPath in selected tab of front window
+        delay 1
+        
+        -- Then run git setup
+        do script "echo '=== Setting up MEDIUM workspace ===' && git stash && git checkout " & branchName & " 2>/dev/null || git checkout -b " & branchName & " && git pull" in selected tab of front window
+        delay 3
+        
+        -- Update HTML title
+        do script "sed -i '' 's|<title>.*</title>|<title>medium</title>|' index.html 2>/dev/null" in selected tab of front window
+        delay 1
+        
+        -- Finally start server
+        do script "echo 'Starting server on port 8082...' && DEV_PORT=8082 yarn run start" in selected tab of front window
+        
+        delay 3
+        
+        -- Add QUICK tab
+        activate
+        delay 0.5
+        tell application "System Events"
+            tell process "Terminal"
+                keystroke "t" using command down
+            end tell
+        end tell
+        delay 2 -- Increased delay for tab to be ready
+        
+        set quickPath to "/Users/gregorywhiteside/Projects/.staff/QUICK"
+        
+        -- First navigate to directory
+        do script "cd " & quoted form of quickPath in selected tab of front window
+        delay 1
+        
+        -- Then run git setup
+        do script "echo '=== Setting up QUICK workspace ===' && git stash && git checkout " & branchName & " 2>/dev/null || git checkout -b " & branchName & " && git pull" in selected tab of front window
+        delay 3
+        
+        -- Update HTML title
+        do script "sed -i '' 's|<title>.*</title>|<title>quick</title>|' index.html 2>/dev/null" in selected tab of front window
+        delay 1
+        
+        -- Finally start server
+        do script "echo 'Starting server on port 8083...' && DEV_PORT=8083 yarn run start" in selected tab of front window
+        
+        -- ===================================
+        -- WINDOW 2: CLAUDE AGENTS
+        -- ===================================
+        delay 3 -- Wait for servers to start initializing
+        
+        set default settings to settings set claudeProfile
+        
+        -- Create first Claude window with BUGS
+        set claudeBugsCommand to "cd " & quoted form of bugsPath & " && claude"
+        set claudeWindow to do script claudeBugsCommand
+        tell claudeWindow
+            set custom title to "Claude Agents"
+        end tell
+        
+        delay 1
+        
+        -- Add MEDIUM Claude tab
+        activate
+        tell application "System Events"
+            tell process "Terminal"
+                keystroke "t" using command down
+            end tell
+        end tell
+        delay 1
+        
+        set claudeMediumCommand to "cd " & quoted form of mediumPath & " && claude"
+        do script claudeMediumCommand in selected tab of front window
+        
+        delay 1
+        
+        -- Add QUICK Claude tab
+        activate
+        tell application "System Events"
+            tell process "Terminal"
+                keystroke "t" using command down
+            end tell
+        end tell
+        delay 1
+        
+        set claudeQuickCommand to "cd " & quoted form of quickPath & " && claude"
+        do script claudeQuickCommand in selected tab of front window
+        
+        -- Restore default settings
+        set default settings to defaultSettings
+        
+        -- Switch to first tab of Claude window
+        delay 0.5
+        activate
+        tell application "System Events"
+            tell process "Terminal"
+                keystroke "1" using command down
+            end tell
+        end tell
+        
+        activate
+    end tell
+end run

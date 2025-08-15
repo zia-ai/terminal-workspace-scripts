@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# Two-window stop script - cleanup servers and Claude windows
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+clear
+
+echo -e "${RED}"
+echo "╔══════════════════════════════════════╗"
+echo "║    Stopping Two-Window Workspace     ║"
+echo "╚══════════════════════════════════════╝"
+echo -e "${NC}"
+echo ""
+
+# Kill servers
+echo "🛑 Stopping servers..."
+echo "───────────────────────────────────────"
+for port in 8081 8082 8083; do
+    PID=$(lsof -ti :$port 2>/dev/null)
+    if [ ! -z "$PID" ]; then
+        kill -9 $PID 2>/dev/null
+        echo "  ✓ Stopped server on port $port"
+    else
+        echo "  - No server on port $port"
+    fi
+done
+
+echo ""
+
+# Close the two workspace windows
+echo "🪟 Closing Terminal windows..."
+echo "───────────────────────────────────────"
+
+osascript -e 'tell application "Terminal"
+    set windowsClosed to 0
+    repeat with w in windows
+        try
+            set windowTitle to custom title of selected tab of w
+            if windowTitle is "Servers" or windowTitle is "Claude Agents" then
+                close w
+                set windowsClosed to windowsClosed + 1
+            end if
+        end try
+    end repeat
+    return windowsClosed
+end tell' 2>/dev/null
+
+echo "  ✓ Closed workspace windows"
+
+echo ""
+echo -e "${GREEN}✨ Two-window workspace stopped${NC}"
+echo ""

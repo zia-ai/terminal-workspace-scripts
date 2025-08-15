@@ -1,0 +1,86 @@
+#!/bin/bash
+
+# Two-window quick start script - servers in one window, Claude agents in another
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Branch name (default: greg, or pass as argument)
+BRANCH_NAME="${1:-greg}"
+
+clear
+
+echo -e "${BLUE}"
+echo "╔══════════════════════════════════════╗"
+echo "║   Two-Window Workspace - GO!         ║"
+echo "╚══════════════════════════════════════╝"
+echo -e "${NC}"
+
+echo -e "${YELLOW}Branch: $BRANCH_NAME${NC}"
+echo ""
+
+# Step 1: Cleanup
+echo -e "${RED}🧹 Cleaning up existing workspaces...${NC}"
+echo "───────────────────────────────────────"
+
+# Kill any existing servers
+echo "Stopping servers on ports 8081-8083..."
+for port in 8081 8082 8083; do
+    PID=$(lsof -ti :$port 2>/dev/null)
+    if [ ! -z "$PID" ]; then
+        kill -9 $PID 2>/dev/null
+        echo "  ✓ Stopped server on port $port"
+    fi
+done
+
+# Close existing Terminal windows with our workspace names
+echo "Closing existing workspace windows..."
+osascript -e 'tell application "Terminal"
+    repeat with w in windows
+        try
+            set windowTitle to custom title of selected tab of w
+            if windowTitle is "Servers" or windowTitle is "Claude Agents" then
+                close w
+            end if
+        end try
+    end repeat
+end tell' 2>/dev/null
+
+echo "  ✓ Cleaned up workspace windows"
+echo ""
+sleep 1
+
+# Step 2: Spawn new two-window setup
+echo -e "${GREEN}🚀 Spawning two-window workspace...${NC}"
+echo "───────────────────────────────────────"
+echo "  Window 1: Servers (3 tabs)"
+echo "    • BUGS server on port 8081"
+echo "    • MEDIUM server on port 8082"
+echo "    • QUICK server on port 8083"
+echo ""
+echo "  Window 2: Claude Agents (3 tabs)"
+echo "    • BUGS Claude agent"
+echo "    • MEDIUM Claude agent"
+echo "    • QUICK Claude agent"
+echo ""
+
+/Users/gregorywhiteside/Projects/.scripts/project_workspace_two_windows "$BRANCH_NAME"
+
+echo ""
+echo -e "${GREEN}✨ All set! Your two-window workspace is ready:${NC}"
+echo "───────────────────────────────────────"
+echo "  🖥  Window 1: 'Servers' - All three dev servers"
+echo "  🤖 Window 2: 'Claude Agents' - All three Claude instances"
+echo ""
+echo "  📦 BUGS    → Port 8081 (Tab 1 in each window)"
+echo "  📦 MEDIUM  → Port 8082 (Tab 2 in each window)"
+echo "  📦 QUICK   → Port 8083 (Tab 3 in each window)"
+echo ""
+echo "  Branch: $BRANCH_NAME"
+echo ""
+echo -e "${BLUE}Use Cmd+1, Cmd+2, Cmd+3 to switch between tabs${NC}"
+echo -e "${BLUE}Happy coding! 🎉${NC}"
