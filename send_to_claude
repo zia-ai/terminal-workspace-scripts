@@ -1,0 +1,67 @@
+#!/usr/bin/osascript
+
+on run argv
+    -- Check if message provided
+    if (count of argv) < 1 then
+        error "Usage: ./send_to_claude \"message\" [window-identifier]"
+    end if
+    
+    -- Parse arguments
+    set messageToSend to item 1 of argv
+    set windowIdentifier to ""
+    
+    if (count of argv) ≥ 2 then
+        set windowIdentifier to item 2 of argv
+    end if
+    
+    tell application "Terminal"
+        activate
+        
+        if windowIdentifier is "" then
+            -- Send to frontmost window
+            -- Type the message
+            tell application "System Events"
+                keystroke messageToSend
+                delay 0.1
+                key code 36 -- Return key
+            end tell
+        else
+            -- Find window by custom title or index
+            set targetWindow to missing value
+            
+            -- First try to match by custom title
+            repeat with w in windows
+                try
+                    if custom title of selected tab of w contains windowIdentifier then
+                        set targetWindow to w
+                        exit repeat
+                    end if
+                end try
+            end repeat
+            
+            -- If not found by title, try as window index
+            if targetWindow is missing value then
+                try
+                    set windowIndex to windowIdentifier as integer
+                    if windowIndex ≤ (count of windows) then
+                        set targetWindow to window windowIndex
+                    end if
+                end try
+            end if
+            
+            -- Focus target window and send message
+            if targetWindow is not missing value then
+                set index of targetWindow to 1
+                delay 0.2
+                
+                tell application "System Events"
+                    keystroke messageToSend
+                    delay 0.1
+                    key code 36 -- Return key
+                end tell
+            else
+                error "Window '" & windowIdentifier & "' not found"
+            end if
+        end if
+    end tell
+end run

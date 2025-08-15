@@ -1,0 +1,45 @@
+#!/usr/bin/osascript
+
+on run argv
+    -- Optional: specify which workspaces to close
+    set workspacesToClose to {}
+    
+    if (count of argv) > 0 then
+        set workspacesToClose to argv
+    else
+        -- Default workspace names if none specified
+        set workspacesToClose to {"bugs", "medium", "quick"}
+    end if
+    
+    tell application "Terminal"
+        set windowsClosed to 0
+        set windowList to ""
+        
+        -- Iterate through all windows
+        repeat with w in windows
+            try
+                -- Get the custom title of the window
+                set windowTitle to custom title of selected tab of w
+                
+                -- Check if this window belongs to one of our workspaces
+                repeat with workspace in workspacesToClose
+                    -- Check if title contains workspace name (handles "bugs - Server", "bugs - Claude", etc.)
+                    if windowTitle contains workspace then
+                        set windowList to windowList & "  - " & windowTitle & "\n"
+                        close w
+                        set windowsClosed to windowsClosed + 1
+                        exit repeat
+                    end if
+                end repeat
+            on error
+                -- Window might not have a custom title, skip it
+            end try
+        end repeat
+        
+        if windowsClosed > 0 then
+            return "Closed " & windowsClosed & " windows:\n" & windowList
+        else
+            return "No workspace windows found to close"
+        end if
+    end tell
+end run

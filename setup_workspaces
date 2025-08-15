@@ -1,0 +1,70 @@
+#!/usr/bin/osascript
+
+on run argv
+    -- Optional: specify branch name (default: greg)
+    set branchName to "greg"
+    
+    if (count of argv) ≥ 1 then
+        set branchName to item 1 of argv
+    end if
+    
+    tell application "Terminal"
+        activate
+        
+        set windowCount to count of windows
+        set setupResults to ""
+        
+        repeat with i from 1 to windowCount
+            set currentWindow to window i
+            
+            -- Get window title
+            set windowTitle to ""
+            try
+                set windowTitle to custom title of selected tab of currentWindow
+            on error
+                set windowTitle to "untitled"
+            end try
+            
+            -- Check if this is a Claude workspace (has Claude in title or is a named workspace)
+            if windowTitle is not "untitled" and windowTitle does not contain "Server" then
+                -- Focus the window
+                set index of currentWindow to 1
+                delay 0.5
+                
+                -- Build the setup command
+                set setupCommand to "# Setting up workspace: " & windowTitle & "\\n"
+                set setupCommand to setupCommand & "git checkout " & branchName & " 2>/dev/null || git checkout -b " & branchName & "\\n"
+                set setupCommand to setupCommand & "git pull origin " & branchName & " 2>/dev/null || git pull\\n"
+                
+                -- Update index.html title if it exists
+                set updateTitleCommand to "if [ -f index.html ]; then\\n"
+                set updateTitleCommand to updateTitleCommand & "  sed -i '' 's|<title>.*</title>|<title>" & windowTitle & "</title>|' index.html\\n"
+                set updateTitleCommand to updateTitleCommand & "  echo 'Updated index.html title to: " & windowTitle & "'\\n"
+                set updateTitleCommand to updateTitleCommand & "else\\n"
+                set updateTitleCommand to updateTitleCommand & "  echo 'No index.html found in this directory'\\n"
+                set updateTitleCommand to updateTitleCommand & "fi"
+                
+                -- Send commands to the terminal
+                tell application "System Events"
+                    -- Clear any partial command
+                    key code 8 using control down -- Ctrl+C
+                    delay 0.2
+                    
+                    -- Send setup commands
+                    keystroke setupCommand
+                    delay 0.2
+                    keystroke updateTitleCommand
+                    delay 0.2
+                    key code 36 -- Return key to execute
+                end tell
+                
+                set setupResults to setupResults & "✓ Setup workspace: " & windowTitle & "\n"
+                delay 1 -- Give time for commands to execute
+            else
+                set setupResults to setupResults & "- Skipped: " & windowTitle & " (not a workspace)\n"
+            end if
+        end repeat
+        
+        return setupResults
+    end tell
+end run

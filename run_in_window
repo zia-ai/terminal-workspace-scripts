@@ -1,0 +1,55 @@
+#!/usr/bin/osascript
+
+on run argv
+    -- Check if command provided
+    if (count of argv) < 1 then
+        error "Usage: ./run_in_window \"command\" [window-identifier]"
+    end if
+    
+    -- Parse arguments
+    set commandToRun to item 1 of argv
+    set windowIdentifier to ""
+    
+    if (count of argv) ≥ 2 then
+        set windowIdentifier to item 2 of argv
+    end if
+    
+    tell application "Terminal"
+        activate
+        
+        if windowIdentifier is "" then
+            -- Run in frontmost window's selected tab
+            do script commandToRun in selected tab of front window
+        else
+            -- Try to find window by custom title or index
+            set targetWindow to missing value
+            
+            -- First try to match by custom title
+            repeat with w in windows
+                try
+                    if custom title of selected tab of w is windowIdentifier then
+                        set targetWindow to w
+                        exit repeat
+                    end if
+                end try
+            end repeat
+            
+            -- If not found by title, try as window index
+            if targetWindow is missing value then
+                try
+                    set windowIndex to windowIdentifier as integer
+                    if windowIndex ≤ (count of windows) then
+                        set targetWindow to window windowIndex
+                    end if
+                end try
+            end if
+            
+            -- Run command in found window or error
+            if targetWindow is not missing value then
+                do script commandToRun in selected tab of targetWindow
+            else
+                error "Window '" & windowIdentifier & "' not found"
+            end if
+        end if
+    end tell
+end run

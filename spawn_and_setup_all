@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# Complete workflow to spawn and setup all staff workspaces
+
+STAFF_DIR="/Users/gregorywhiteside/Projects/.staff"
+BRANCH_NAME="${1:-greg}"
+
+echo "==================================="
+echo "Staff Workspace Setup"
+echo "==================================="
+echo "Directory: $STAFF_DIR"
+echo "Branch: $BRANCH_NAME"
+echo ""
+
+# Step 1: Spawn all workspaces
+echo "Step 1: Spawning workspaces..."
+/Users/gregorywhiteside/Projects/.scripts/spawn_staff_workspaces "$BRANCH_NAME"
+
+# Wait for windows to open
+echo ""
+echo "Waiting for windows to initialize..."
+sleep 5
+
+# Step 2: Setup all workspaces
+echo ""
+echo "Step 2: Configuring workspaces..."
+echo "(This requires Terminal accessibility permissions)"
+/Users/gregorywhiteside/Projects/.scripts/setup_workspaces "$BRANCH_NAME"
+
+echo ""
+echo "==================================="
+echo "Setup Complete!"
+echo "==================================="
+echo ""
+echo "Your workspaces are ready:"
+/Users/gregorywhiteside/Projects/.scripts/list_terminals
+
+echo ""
+echo "Each workspace:"
+echo "✓ Is on branch: $BRANCH_NAME"
+echo "✓ Has latest changes pulled"
+echo "✓ HTML title matches terminal name"

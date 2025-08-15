@@ -1,0 +1,125 @@
+#!/usr/bin/osascript
+
+on run argv
+    -- Default values
+    set projectPath to ""
+    set runCommand to "start"  -- default: start, or preview, or startProd, or start:PORT
+    set windowTitle to "Project Workspace"
+    set branchName to "greg"
+    
+    -- Parse arguments
+    if (count of argv) ≥ 1 then
+        set projectPath to item 1 of argv
+    else
+        error "Usage: ./project_workspace_tabs /path/to/project [start|preview|startProd|start:PORT] [window-title] [branch]"
+    end if
+    
+    if (count of argv) ≥ 2 then
+        set runCommand to item 2 of argv
+    end if
+    
+    if (count of argv) ≥ 3 then
+        set windowTitle to item 3 of argv
+    end if
+    
+    if (count of argv) ≥ 4 then
+        set branchName to item 4 of argv
+    end if
+    
+    -- Build git setup commands (with clear to hide the command text)
+    set gitSetupCommands to "clear && cd " & quoted form of projectPath & " && " & ¬
+        "echo 'Setting up git branch: " & branchName & "' && " & ¬
+        "git stash push -m 'Auto-stash before switching to " & branchName & "' > /dev/null 2>&1 && " & ¬
+        "git checkout " & branchName & " 2>/dev/null || git checkout -b " & branchName & " > /dev/null 2>&1 && " & ¬
+        "git pull origin " & branchName & " 2>/dev/null || git pull 2>/dev/null || echo 'No remote configured'"
+    
+    -- Build yarn command (handle custom port format like start:8081)
+    if runCommand contains ":" then
+        -- Extract port number from start:PORT format
+        set AppleScript's text item delimiters to ":"
+        set commandParts to text items of runCommand
+        set baseCommand to item 1 of commandParts
+        set portNumber to item 2 of commandParts
+        set AppleScript's text item delimiters to ""
+        
+        -- Run yarn start with DEV_PORT to override package.json
+        set yarnCommand to "DEV_PORT=" & portNumber & " yarn run " & baseCommand
+    else
+        -- Regular yarn command
+        set yarnCommand to "yarn run " & runCommand
+    end if
+    
+    tell application "Terminal"
+        -- Get random profile
+        set allProfiles to name of every settings set
+        set randomIndex to random number from 1 to count of allProfiles
+        set profileName to item randomIndex of allProfiles
+        
+        -- Step 1: Open new window with empty command to ensure it's ready
+        set defaultSettings to default settings
+        set default settings to settings set profileName
+        set newWindow to do script "" -- Empty command to create window
+        
+        -- Set custom title for the window
+        tell newWindow
+            set custom title to windowTitle
+        end tell
+        
+        -- Restore original default
+        set default settings to defaultSettings
+        
+        -- Wait for window to be fully ready
+        delay 1
+        
+        -- Navigate to directory and setup git BEFORE starting Claude
+        set navigateCommand to "cd " & quoted form of projectPath
+        do script navigateCommand in newWindow
+        
+        -- Wait for navigation to complete
+        delay 1
+        
+        -- Run git setup BEFORE Claude (with cleaner output)
+        set gitSetupCommand to "echo 'Setting up workspace...' && git stash && git checkout " & branchName & " 2>/dev/null || git checkout -b " & branchName & " && git pull && echo 'Git setup complete'"
+        do script gitSetupCommand in newWindow
+        
+        -- Wait for git setup to complete
+        delay 3
+        
+        -- Step 2: Create new tab for yarn BEFORE starting Claude in first tab
+        activate -- Make sure Terminal is frontmost
+        delay 0.5
+        tell application "System Events"
+            tell process "Terminal"
+                keystroke "t" using command down
+            end tell
+        end tell
+        
+        -- Wait for new tab to be ready
+        delay 1.5
+        
+        -- Step 3: Setup and run yarn in the new tab
+        do script navigateCommand in selected tab of front window
+        delay 1
+        
+        -- Run git setup and yarn in server tab (with visible output)
+        set serverCommand to "echo 'Starting server on port...' && git stash && git checkout " & branchName & " 2>/dev/null || git checkout -b " & branchName & " && git pull && echo 'Starting: " & yarnCommand & "' && " & yarnCommand
+        do script serverCommand in selected tab of front window
+        
+        -- Step 4: Switch back to first tab and NOW start Claude
+        delay 1
+        activate -- Make sure Terminal is frontmost
+        delay 0.5
+        tell application "System Events"
+            tell process "Terminal"
+                keystroke "1" using command down
+            end tell
+        end tell
+        
+        delay 0.5
+        
+        -- Now start Claude in the first tab (after all setup is done)
+        do script "clear && claude" in selected tab of front window
+        
+        activate
+    end tell
+end run

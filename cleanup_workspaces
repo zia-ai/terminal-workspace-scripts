@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Complete cleanup script - kills servers and closes windows
+
+echo "==================================="
+echo "Complete Workspace Cleanup"
+echo "==================================="
+echo ""
+
+# Step 1: Kill servers
+echo "Step 1: Stopping servers..."
+/Users/gregorywhiteside/Projects/.scripts/kill_workspace_servers
+
+echo ""
+echo "Step 2: Closing Terminal windows..."
+
+# Step 2: Close Terminal windows
+RESULT=$(/Users/gregorywhiteside/Projects/.scripts/close_workspaces)
+echo "$RESULT"
+
+echo ""
+echo "==================================="
+echo "Cleanup complete!"
+echo "====================================="

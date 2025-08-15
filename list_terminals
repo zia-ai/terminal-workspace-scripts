@@ -1,0 +1,35 @@
+#!/usr/bin/osascript
+
+tell application "Terminal"
+    set windowList to ""
+    set windowCount to count of windows
+    
+    repeat with i from 1 to windowCount
+        set w to window i
+        set windowInfo to "Window " & i & ": "
+        
+        -- Try to get custom title
+        try
+            set customTitle to custom title of selected tab of w
+            set windowInfo to windowInfo & "\"" & customTitle & "\""
+        on error
+            set windowInfo to windowInfo & "(untitled)"
+        end try
+        
+        -- Add tab count
+        set tabCount to count of tabs of w
+        set windowInfo to windowInfo & " [" & tabCount & " tab"
+        if tabCount is not 1 then
+            set windowInfo to windowInfo & "s"
+        end if
+        set windowInfo to windowInfo & "]"
+        
+        set windowList to windowList & windowInfo & "\n"
+    end repeat
+    
+    if windowCount is 0 then
+        return "No Terminal windows open"
+    else
+        return windowList
+    end if
+end tell

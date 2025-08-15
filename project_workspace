@@ -1,0 +1,68 @@
+#!/usr/bin/osascript
+
+on run argv
+    -- Default values
+    set projectPath to ""
+    set runCommand to "start"  -- default: start, or preview, or startProd
+    set windowTitle to "Project Workspace"
+    
+    -- Parse arguments
+    if (count of argv) ≥ 1 then
+        set projectPath to item 1 of argv
+    else
+        error "Usage: ./project_workspace /path/to/project [start|preview|startProd] [window-title]"
+    end if
+    
+    if (count of argv) ≥ 2 then
+        set runCommand to item 2 of argv
+    end if
+    
+    if (count of argv) ≥ 3 then
+        set windowTitle to item 3 of argv
+    end if
+    
+    -- Build the yarn command
+    set yarnCommand to "yarn run " & runCommand
+    
+    tell application "Terminal"
+        -- Pick random profile
+        set allProfiles to name of every settings set
+        set randomIndex to random number from 1 to count of allProfiles
+        set profileName to item randomIndex of allProfiles
+        
+        -- Step 1: Open new window and navigate to project directory
+        set navigateCommand to "cd " & quoted form of projectPath
+        set newWindow to do script navigateCommand
+        
+        -- Set custom title for the window
+        tell newWindow
+            set custom title to windowTitle
+        end tell
+        
+        -- Small delay to ensure first command completes
+        delay 0.5
+        
+        -- Step 2: Open new tab in same window
+        tell application "System Events"
+            keystroke "t" using command down
+        end tell
+        
+        delay 0.5
+        
+        -- Step 3: Navigate to project and run yarn command in new tab
+        set fullCommand to navigateCommand & " && " & yarnCommand
+        do script fullCommand in selected tab of front window
+        
+        -- Step 4: Switch back to first tab and run claude
+        tell application "System Events"
+            keystroke "1" using command down
+        end tell
+        
+        delay 0.5
+        
+        -- Run claude in the first tab
+        do script "claude" in selected tab of front window
+        
+        activate
+    end tell
+end run

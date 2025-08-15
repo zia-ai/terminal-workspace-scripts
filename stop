@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Quick stop script - cleanup everything
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+clear
+
+echo -e "${RED}"
+echo "╔══════════════════════════════════════╗"
+echo "║         Stopping Workspaces          ║"
+echo "╚══════════════════════════════════════╝"
+echo -e "${NC}"
+echo ""
+
+# Kill servers
+echo "🛑 Stopping servers..."
+echo "───────────────────────────────────────"
+for port in 8081 8082 8083; do
+    PID=$(lsof -ti :$port 2>/dev/null)
+    if [ ! -z "$PID" ]; then
+        kill -9 $PID 2>/dev/null
+        echo "  ✓ Stopped server on port $port"
+    else
+        echo "  - No server on port $port"
+    fi
+done
+
+echo ""
+
+# Close windows
+echo "🪟 Closing Terminal windows..."
+echo "───────────────────────────────────────"
+RESULT=$(/Users/gregorywhiteside/Projects/.scripts/close_workspaces 2>/dev/null)
+if [[ $RESULT == *"Closed"* ]]; then
+    echo "  ✓ Closed all workspace windows"
+else
+    echo "  - No workspace windows to close"
+fi
+
+echo ""
+echo -e "${GREEN}✨ All workspaces stopped${NC}"
+echo ""

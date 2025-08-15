@@ -1,0 +1,64 @@
+#!/usr/bin/osascript
+
+on run argv
+    -- Default values
+    set projectPath to ""
+    set runCommand to "start"  -- default: start, or preview, or startProd
+    set windowTitle to "Project Workspace"
+    
+    -- Parse arguments
+    if (count of argv) ≥ 1 then
+        set projectPath to item 1 of argv
+    else
+        error "Usage: ./project_workspace_simple /path/to/project [start|preview|startProd] [window-title]"
+    end if
+    
+    if (count of argv) ≥ 2 then
+        set runCommand to item 2 of argv
+    end if
+    
+    if (count of argv) ≥ 3 then
+        set windowTitle to item 3 of argv
+    end if
+    
+    -- Build commands
+    set yarnCommand to "yarn run " & runCommand
+    
+    tell application "Terminal"
+        -- Get random profiles for each window
+        set allProfiles to name of every settings set
+        
+        -- Random profile for Claude window
+        set randomIndex1 to random number from 1 to count of allProfiles
+        set profile1 to item randomIndex1 of allProfiles
+        
+        -- Different random profile for Server window
+        set randomIndex2 to random number from 1 to count of allProfiles
+        set profile2 to item randomIndex2 of allProfiles
+        
+        -- Window 1: Claude with random profile
+        set claudeCommand to "cd " & quoted form of projectPath & " && claude"
+        set defaultSettings to default settings
+        set default settings to settings set profile1
+        set claudeWindow to do script claudeCommand
+        tell claudeWindow
+            set custom title to windowTitle & " - Claude"
+        end tell
+        
+        -- Window 2: Yarn server with different random profile
+        set serverCommand to "cd " & quoted form of projectPath & " && " & yarnCommand
+        set default settings to settings set profile2
+        set serverWindow to do script serverCommand
+        tell serverWindow
+            set custom title to windowTitle & " - Server"
+        end tell
+        
+        -- Restore original default
+        set default settings to defaultSettings
+        
+        -- Bring Claude window to front
+        set frontmost of window 1 to true
+        
+        activate
+    end tell
+end run

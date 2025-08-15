@@ -1,0 +1,108 @@
+#!/usr/bin/osascript
+
+on run argv
+    -- Default values
+    set projectPath to ""
+    set runCommand to "start"  -- default: start, or preview, or startProd, or start:PORT
+    set windowTitle to "Project Workspace"
+    set branchName to "greg"
+    
+    -- Parse arguments
+    if (count of argv) ≥ 1 then
+        set projectPath to item 1 of argv
+    else
+        error "Usage: ./project_workspace_single /path/to/project [start|preview|startProd|start:PORT] [window-title] [branch]"
+    end if
+    
+    if (count of argv) ≥ 2 then
+        set runCommand to item 2 of argv
+    end if
+    
+    if (count of argv) ≥ 3 then
+        set windowTitle to item 3 of argv
+    end if
+    
+    if (count of argv) ≥ 4 then
+        set branchName to item 4 of argv
+    end if
+    
+    -- Build yarn command (handle custom port format like start:8081)
+    if runCommand contains ":" then
+        -- Extract port number from start:PORT format
+        set AppleScript's text item delimiters to ":"
+        set commandParts to text items of runCommand
+        set baseCommand to item 1 of commandParts
+        set portNumber to item 2 of commandParts
+        set AppleScript's text item delimiters to ""
+        
+        -- Run npx vite with DEV_PORT (bypasses package.json script)
+        set yarnCommand to "DEV_PORT=" & portNumber & " npx vite"
+    else
+        -- Regular yarn command
+        set yarnCommand to "yarn run " & runCommand
+    end if
+    
+    tell application "Terminal"
+        -- Get random profile
+        set allProfiles to name of every settings set
+        set randomIndex to random number from 1 to count of allProfiles
+        set profileName to item randomIndex of allProfiles
+        
+        -- First, open window and do git setup AND update HTML title
+        set gitCommand to "cd " & quoted form of projectPath & " && " & ¬
+            "echo '=== Setting up workspace: " & windowTitle & " ===' && " & ¬
+            "echo 'Stashing changes...' && git stash && " & ¬
+            "echo 'Switching to branch: " & branchName & "' && " & ¬
+            "(git checkout " & branchName & " 2>/dev/null || git checkout -b " & branchName & ") && " & ¬
+            "echo 'Pulling latest changes...' && git pull && " & ¬
+            "echo 'Updating HTML title...' && " & ¬
+            "if [ -f index.html ]; then " & ¬
+            "  sed -i '' 's|<title>.*</title>|<title>" & windowTitle & "</title>|' index.html && " & ¬
+            "  echo '  ✓ Updated index.html title to: " & windowTitle & "'; " & ¬
+            "else " & ¬
+            "  echo '  ⚠ No index.html found'; " & ¬
+            "fi && " & ¬
+            "echo '=== Git setup complete ===' && " & ¬
+            "echo ''"
+        
+        -- Open window with git setup
+        set defaultSettings to default settings
+        set default settings to settings set profileName
+        set serverWindow to do script gitCommand
+        
+        tell serverWindow
+            set custom title to windowTitle & " - Server"
+        end tell
+        
+        -- Wait for git commands to complete
+        delay 3
+        
+        -- Now run the server in the same window
+        set serverCommand to "echo '=== Starting server ===' && " & ¬
+            "echo 'Running: " & yarnCommand & "' && " & ¬
+            yarnCommand
+        
+        do script serverCommand in serverWindow
+        
+        set default settings to defaultSettings
+        
+        -- Wait for server to start
+        delay 5
+        
+        -- Now open a second window for Claude in the same directory
+        set claudeCommand to "cd " & quoted form of projectPath & " && claude"
+        set default settings to settings set profileName
+        set claudeWindow to do script claudeCommand
+        
+        tell claudeWindow
+            set custom title to windowTitle & " - Claude"
+        end tell
+        
+        set default settings to defaultSettings
+        
+        -- Bring Claude window to front
+        set frontmost of window 1 to true
+        
+        activate
+    end tell
+end run

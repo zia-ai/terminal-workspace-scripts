@@ -1,0 +1,43 @@
+#!/usr/bin/osascript
+
+on run argv
+    -- Check if command provided
+    if (count of argv) < 1 then
+        error "Usage: ./run_in_terminal \"command\" [window-title] [profile]"
+    end if
+    
+    -- Parse arguments
+    set commandToRun to item 1 of argv
+    set windowTitle to ""
+    set profileName to ""
+    
+    if (count of argv) ≥ 2 then
+        set windowTitle to item 2 of argv
+    end if
+    
+    if (count of argv) ≥ 3 then
+        set profileName to item 3 of argv
+    end if
+    
+    -- Open Terminal and run command
+    tell application "Terminal"
+        -- Pick random profile if none specified
+        if profileName is "" then
+            set allProfiles to name of every settings set
+            set randomIndex to random number from 1 to count of allProfiles
+            set profileName to item randomIndex of allProfiles
+        end if
+        
+        -- Create new window with profile and run command
+        set newWindow to do script commandToRun in window 1 of (make new window with properties {current settings:settings set profileName})
+        
+        -- Set custom title if provided
+        if windowTitle is not "" then
+            tell newWindow
+                set custom title to windowTitle
+            end tell
+        end if
+        
+        activate
+    end tell
+end run

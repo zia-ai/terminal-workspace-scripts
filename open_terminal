@@ -1,0 +1,39 @@
+#!/usr/bin/osascript
+
+on run argv
+    -- Default values
+    set windowTitle to "Terminal"
+    set startCommand to ""
+    set profileName to ""
+    
+    -- Parse arguments
+    if (count of argv) ≥ 1 then
+        set windowTitle to item 1 of argv
+    end if
+    
+    if (count of argv) ≥ 2 then
+        set startCommand to item 2 of argv
+    end if
+    
+    if (count of argv) ≥ 3 then
+        set profileName to item 3 of argv
+    end if
+    
+    -- Open Terminal with custom title, optional command, and profile
+    tell application "Terminal"
+        -- If no profile specified, pick a random one
+        if profileName is "" then
+            set allProfiles to name of every settings set
+            set randomIndex to random number from 1 to count of allProfiles
+            set profileName to item randomIndex of allProfiles
+        end if
+        
+        -- Open with selected or random profile
+        set newWindow to do script startCommand in window 1 of (make new window with properties {current settings:settings set profileName})
+        
+        tell newWindow
+            set custom title to windowTitle
+        end tell
+        activate
+    end tell
+end run
